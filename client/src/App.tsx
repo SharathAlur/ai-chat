@@ -1,53 +1,69 @@
 import { useState, type ReactNode } from "react";
 import { type Message } from "./types";
+import { fakeStream } from "./helpers/fakeStream";
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
 
   const bubbleClass =
     "max-w-[80%] rounded-2xl px-4 py-2 leading-relaxed whitespace-pre-wrap wrap-break-word";
-  const systemClass = `${bubbleClass} self-start rounded-bl-sm bg-gray-100 dark:bg-gray-800`;
+  const assistantClass = `${bubbleClass} self-start rounded-bl-sm bg-gray-100 dark:bg-gray-800`;
   const userClass = `${bubbleClass} self-end rounded-br-sm bg-blue-600 text-white`;
 
-  function handleSubmit(e: React.FormEvent) {
+  const addAssistantResponse = async (userInput: string) => {
+    const response = `this is the thing you typed.. ${userInput}. it will be processed.`;
+    const id = crypto.randomUUID();
+    let content = "";
+    setIsStreaming(true);
+
+    setMessages((prev) => [...prev, { id, content, role: "assistant" }]);
+    try {
+      for await (const stream of fakeStream(response)) {
+        console.log(stream);
+        content += stream;
+
+        // TODO 6: add it to messages
+        setMessages((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, content } : m)),
+        );
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    if (isStreaming) return;
     e.preventDefault();
-    const msg = input;
+    const text = input.trim();
     // TODO 1: trim the input; if it's empty, stop here
-    if (!input.trim()) {
+    if (!text) {
       return;
     }
 
     // TODO 2: build a userMessage object of type Message
     const userMessage: Message = {
       id: crypto.randomUUID(),
-      content: input.trim(),
+      content: text,
       role: "user",
     };
 
     // TODO 3: add it to messages
     setMessages((prev) => [...prev, userMessage]);
+    addAssistantResponse(text);
 
     // TODO 4: clear the input
     setInput("");
-    setTimeout(() => {
-      // TODO 5: build an assistant message: "You said: <text>"
-      const mess = `this is the thing you typed.. ${msg}. it will be processed.`;
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        content: mess,
-        role: "assistant",
-      };
-
-      // TODO 6: add it to messages
-      setMessages((prev) => [...prev, assistantMessage]);
-    }, 500);
-  }
+  };
 
   const addMessages = (): ReactNode => (
     <div className="flex flex-col gap-3">
       {messages.map((message) => {
-        const cls = message.role === "user" ? userClass : systemClass;
+        const cls = message.role === "user" ? userClass : assistantClass;
         return (
           <p className={cls} key={message.id}>
             {message.content}
@@ -96,7 +112,7 @@ function App() {
           />
           <button
             type="submit"
-            disabled={!input.trim()}
+            disabled={!input.trim() || isStreaming}
             className="h-11 shrink-0 rounded-xl bg-blue-600 px-5 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Send
