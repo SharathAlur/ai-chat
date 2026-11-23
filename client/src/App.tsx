@@ -1,14 +1,14 @@
 import { useState, type ReactNode } from "react";
-import "./App.css";
 import { type Message } from "./types";
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
 
-  const systemClass = "text-left mr-10 p-2 wrap-break-word whitespace-pre-wrap";
-  const userClass =
-    "text-right  ml-10 bg-gray-100 p-2 rounded wrap-break-word whitespace-pre-wrap";
+  const bubbleClass =
+    "max-w-[80%] rounded-2xl px-4 py-2 leading-relaxed whitespace-pre-wrap wrap-break-word";
+  const systemClass = `${bubbleClass} self-start rounded-bl-sm bg-gray-100 dark:bg-gray-800`;
+  const userClass = `${bubbleClass} self-end rounded-br-sm bg-blue-600 text-white`;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,7 +45,7 @@ function App() {
   }
 
   const addMessages = (): ReactNode => (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {messages.map((message) => {
         const cls = message.role === "user" ? userClass : systemClass;
         return (
@@ -58,18 +58,24 @@ function App() {
   );
 
   return (
-    <div id="center" className="shadow-md m-10 p-5">
-      <div className="h-full p-5 border rounded-md border-blue-100 flex flex-col gap-5 overflow-y-auto">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-screen">
-            Enter message to start chatting
-          </div>
-        ) : (
-          addMessages()
-        )}
-      </div>
-      <form onSubmit={handleSubmit}>
-        <div className="h-20 mt-10">
+    <div className="flex h-svh flex-col p-4 sm:p-6">
+      <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900">
+        <header className="border-b border-gray-200 px-5 py-3 font-semibold dark:border-gray-800">
+          AI Chat
+        </header>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {messages.length === 0 ? (
+            <div className="flex h-full items-center justify-center text-gray-400">
+              Enter message to start chatting
+            </div>
+          ) : (
+            addMessages()
+          )}
+        </div>
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-end gap-2 border-t border-gray-200 p-3 dark:border-gray-800"
+        >
           <textarea
             id="userInput"
             onKeyDown={(e) => {
@@ -84,10 +90,19 @@ function App() {
             }}
             onChange={(e) => setInput(e.target.value)}
             value={input}
-            className="border"
+            rows={1}
+            placeholder="Type a message… (Shift+Enter for a new line)"
+            className="field-sizing-content max-h-40 min-h-11 flex-1 resize-none rounded-xl border border-gray-300 bg-transparent px-4 py-2.5 text-base placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-gray-700"
           />
-        </div>
-      </form>
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            className="h-11 shrink-0 rounded-xl bg-blue-600 px-5 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Send
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
