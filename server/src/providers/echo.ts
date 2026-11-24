@@ -13,7 +13,7 @@ export const echoProvider: ChatProvider = {
     const words = buildReply(messages).split(" ");
     for (const word of words) {
       console.log("generating:", word); // to see Ctrl+C stopping generation
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 0));
       yield word + " ";
     }
   },

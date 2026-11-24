@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { type Message } from "./types";
-import { fakeStream } from "./helpers/fakeStream";
+import { readTextStream } from "./helpers/readTextStream";
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -20,7 +20,7 @@ function App() {
     try {
       setMessages((prev) => [...prev, { id, content: "", role: "assistant" }]);
 
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/chat/stream", {
         method: "POST",
         headers: { "Content-type": "application/json" },
         body: JSON.stringify({
@@ -33,9 +33,11 @@ function App() {
       if (!res.ok) {
         throw new Error(`request failed with ${res.status}`);
       }
+      if (!res.ok) throw new Error(`request failed with ${res.status}`);
+
       let content = "";
-      const response = await res.json();
-      for await (const stream of fakeStream(response.reply)) {
+      for await (const stream of readTextStream(res)) {
+        console.log(stream);
         content += stream;
 
         setMessages((prev) =>
