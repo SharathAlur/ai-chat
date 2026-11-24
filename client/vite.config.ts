@@ -6,7 +6,10 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 3001, // Change to your desired port
+    port: 8080, // Change to your desired port
     strictPort: true, // Optional: prevents Vite from automatically trying the next port if 3000 is busy
+    proxy: {
+      "/api": "http://localhost:3001",
+    },
   },
 });

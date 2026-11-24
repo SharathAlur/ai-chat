@@ -12,19 +12,32 @@ function App() {
   const assistantClass = `${bubbleClass} self-start rounded-bl-sm bg-gray-100 dark:bg-gray-800`;
   const userClass = `${bubbleClass} self-end rounded-br-sm bg-blue-600 text-white`;
 
-  const addAssistantResponse = async (userInput: string) => {
-    const response = `this is the thing you typed.. ${userInput}. it will be processed.`;
+  const addAssistantResponse = async (history: Message[]) => {
+    // const response = `this is the thing you typed.. ${userInput}. it will be processed.`;
     const id = crypto.randomUUID();
-    let content = "";
     setIsStreaming(true);
 
-    setMessages((prev) => [...prev, { id, content, role: "assistant" }]);
     try {
-      for await (const stream of fakeStream(response)) {
-        console.log(stream);
+      setMessages((prev) => [...prev, { id, content: "", role: "assistant" }]);
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+        body: JSON.stringify({
+          messages: history.map(({ content, role }) => ({
+            content,
+            role,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`request failed with ${res.status}`);
+      }
+      let content = "";
+      const response = await res.json();
+      for await (const stream of fakeStream(response.reply)) {
         content += stream;
 
-        // TODO 6: add it to messages
         setMessages((prev) =>
           prev.map((m) => (m.id === id ? { ...m, content } : m)),
         );
@@ -37,26 +50,22 @@ function App() {
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    if (isStreaming) return;
     e.preventDefault();
+    if (isStreaming) return;
     const text = input.trim();
-    // TODO 1: trim the input; if it's empty, stop here
     if (!text) {
       return;
     }
 
-    // TODO 2: build a userMessage object of type Message
     const userMessage: Message = {
       id: crypto.randomUUID(),
       content: text,
       role: "user",
     };
 
-    // TODO 3: add it to messages
     setMessages((prev) => [...prev, userMessage]);
-    addAssistantResponse(text);
+    addAssistantResponse([...messages, userMessage]);
 
-    // TODO 4: clear the input
     setInput("");
   };
 
@@ -65,9 +74,9 @@ function App() {
       {messages.map((message) => {
         const cls = message.role === "user" ? userClass : assistantClass;
         return (
-          <p className={cls} key={message.id}>
-            {message.content}
-          </p>
+          <div className={cls} key={message.id}>
+            {message.content || "Thinking..."}
+          </div>
         );
       })}
     </div>
