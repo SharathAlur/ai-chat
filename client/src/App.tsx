@@ -30,15 +30,11 @@ function App() {
           })),
         }),
       });
-      if (!res.ok) {
-        throw new Error(`request failed with ${res.status}`);
-      }
       if (!res.ok) throw new Error(`request failed with ${res.status}`);
 
       let content = "";
-      for await (const stream of readTextStream(res)) {
-        console.log(stream);
-        content += stream;
+      for await (const chunk of readTextStream(res)) {
+        content += chunk;
 
         setMessages((prev) =>
           prev.map((m) => (m.id === id ? { ...m, content } : m)),
@@ -46,6 +42,13 @@ function App() {
       }
     } catch (e) {
       console.error(e);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === id
+            ? { ...m, content: m.content + "\n\n⚠️ Response interrupted." }
+            : m,
+        ),
+      );
     } finally {
       setIsStreaming(false);
     }

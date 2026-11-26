@@ -15,7 +15,7 @@ export async function* readTextStream(res: Response) {
       yield decoder.decode(value, { stream: true });
     }
   } catch (e) {
-    console.error("error our");
+    console.error("error our" + e);
   } finally {
     reader.releaseLock();
   }

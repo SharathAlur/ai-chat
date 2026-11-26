@@ -24,25 +24,21 @@ app.post("/api/chat", validateMessages, async (req, res) => {
 });
 
 app.post("/api/chat/stream", validateMessages, async (req, res) => {
-  let clientGone = false;
+  const controller = new AbortController();
   try {
     const { messages } = req.body;
 
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache");
 
-    res.on("close", () => {
-      clientGone = true;
-    });
+    res.on("close", () => controller.abort());
 
-    for await (const chunk of provider.stream(messages)) {
-      if (clientGone) break; // stop pulling chunks
+    for await (const chunk of provider.stream(messages, controller.signal)) {
       res.write(chunk);
     }
     res.end();
   } catch (e) {
-    console.error(e);
-    if (clientGone) return;
+    if (controller.signal.aborted) return;
     if (!res.headersSent) {
       res.status(500).json({ error: "Something went wrong" }); // nothing sent yet → proper error
     } else {

@@ -6,5 +6,5 @@ export interface ChatMessage {
 export interface ChatProvider {
   name: string;
   complete(messages: ChatMessage[]): Promise<string>;
-  stream(messages: ChatMessage[]): AsyncIterable<string>;
+  stream(messages: ChatMessage[], signal?: AbortSignal): AsyncIterable<string>;
 }
